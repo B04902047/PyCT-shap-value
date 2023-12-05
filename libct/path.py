@@ -27,7 +27,7 @@ class PathToConstraint:
             c.processed = True  # for debugging purposes
             cneg = self.current_constraint.add_child(pneg)
             # add the negated constraint to the queue for later traversal
-            conbool.engine.constraints_to_solve.append((cneg, get_current_position()))
+            conbool.engine.push_constraint(cneg, get_current_position())
             log.smtlib2(f"Now constraint: {c}")
             log.smtlib2(f"Add constraint: {cneg}")
         else:

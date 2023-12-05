@@ -21,7 +21,7 @@ import numpy as np
 from typing import List, Tuple, Any, Callable, Literal
 from types import ModuleType
 from libct.constraint import Constraint
-from libct.compare_shap_values import ShapValuesComparator
+from libct.compare_shap_values import ShapValuesCalculator
 
 from libct.compare_shap_values import pop_first_constraint, pop_last_constraint, pop_the_most_important_constraint
 
@@ -129,8 +129,8 @@ class ExplorationEngine:
         global recorder
         recorder = ConcolicTestRecorder(self.save_dir, self.input_name)
 
-        # consists of the constraints that are going to be solved by the solver
-        self.constraints_to_solve: List[PositionedConstraint] = []
+        # the constraints to be solved (with their shap values when using priortity queue) 
+        self.constraints_to_solve: List[Constraint] | List[tuple[Constraint, float]] = []
         self.path = PathToConstraint()
         self.in_out: List[Tuple[Any, Any]] = []
         self.coverage_data = coverage.CoverageData()
@@ -181,16 +181,7 @@ class ExplorationEngine:
             recorder.solve_constr_start()
             solve_constr_num = len(self.constraints_to_solve)
             while len(self.constraints_to_solve) > 0:
-                if self.constraints_collection_type =='stack':
-                    constraint: Constraint = pop_last_constraint(
-                        self.constraints_to_solve)
-                elif self.constraints_collection_type == 'queue':
-                    constraint: Constraint = pop_first_constraint(
-                        self.constraints_to_solve)
-                elif self.constraints_collection_type == 'priority_queue':
-                    constraint: Constraint = pop_the_most_important_constraint(
-                        self.constraints_to_solve,
-                        self.compare)
+                constraint: Constraint = self.pop_contraint()
 
                 model = Solver.find_model_from_constraint(
                     self, constraint, self.original_args)
@@ -203,6 +194,9 @@ class ExplorationEngine:
                         # sat and this input args have not used
                         # .copy() is important!!
                         tried_input_args.append(all_args.copy())
+                        # recalculate shap values if using
+                        if self.constraints_collection_type == 'priority_queue':
+                            self.shap_values_calculator.recalculate_shap_values_for_all_neurons()
                         break
 
             recorder.solve_constr_end()
@@ -257,12 +251,11 @@ class ExplorationEngine:
         # print("------input_for_shap------", self.input_for_shap)
         # print("------background_dataset------", self.background_dataset)
         if self.constraints_collection_type == 'priority_queue':
-            self.comparator = ShapValuesComparator(
+            self.shap_values_calculator = ShapValuesCalculator(
                 model= load_model(self.model_path) ,
                 background_dataset = self.background_dataset_for_shap,
                 input = np.expand_dims(self.input_for_shap, axis=0)
             )
-            self.compare = self.comparator.compare
 
         if self.funcname is None:
             self.funcname = self.modpath.split('.')[-1]
@@ -711,3 +704,22 @@ class ExplorationEngine:
             for file, lines in missing_lines.items():
                 print(f"  {file}: {sorted(lines)}")
         print("")
+
+    def push_contraint(self, constraint: Constraint, position: tuple[int, tuple[int, ...]]):
+        if self.constraints_collection_type == 'priority_queue':
+            self.constraints_to_solve.append((constraint, position))
+        else: self.constraints_to_solve.append(constraint)
+    
+    def pop_contraint(self):
+        if self.constraints_collection_type =='stack':
+            return self.shap_valued_constraints.pop()
+        elif self.constraints_collection_type == 'queue':
+            return self.shap_valued_constraints.pop(0)
+        elif self.constraints_collection_type == 'priority_queue':
+            self.shap_valued_constraints.sort(
+                key=lambda shap_valued_constraints: shap_valued_constraints[1])
+            return self.shap_valued_constraints.pop()[0]
+
+    def get_shap_value(self, position: tuple[int, tuple[int, ...]]) -> float:
+        layer_number, indices = position
+        return self.shap_values_calculator.get_shap_value(layer_number, indices)
