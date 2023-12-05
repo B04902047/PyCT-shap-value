@@ -78,6 +78,7 @@ max_iter = 0
 lib = None
 logfile = None
 root = os.path.dirname(__file__)
+#root = './'
 safety = 0
 single_timeout = 900
 timeout = 900
@@ -92,7 +93,8 @@ if dump_projstats:
         os.path.abspath(os.path.dirname(__file__)), "project_statistics",
          os.path.abspath(root).split('/')[-1], modpath, funcname)
 
-
+print("root",root)
+print(os.path.dirname(__file__))
 module = get_module_from_rootdir_and_modpath(root, modpath)
 func_init_model = get_function_from_module_and_funcname(module, "init_model")
 execute = get_function_from_module_and_funcname(module, funcname)

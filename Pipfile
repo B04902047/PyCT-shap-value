@@ -7,8 +7,12 @@ name = "pypi"
 coverage = "==4.5.4"
 func-timeout = "*"
 concurrencytest = "*"
+numpy = "*"
+opencv-python = "*"
+shap = "*"
+keras = "*"
+tensorflow = "*"
 
 [dev-packages]
 
-[requires]
-python_version = "3.8"
+

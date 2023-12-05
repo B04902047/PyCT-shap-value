@@ -1,18 +1,21 @@
 # Copyright: see copyright.txt
+from __future__ import annotations
+from libct.predicate import Predicate
+
 
 class Constraint:
-    global_constraints = []
+    global_constraints: list[Self] = []
 
-    def __init__(self, parent, last_predicate, height=0):
-        self.parent = parent # should be "None" or "a Constraint id"
+    def __init__(self, parent: int | None, last_predicate, height: int = 0):
+        self.parent: int | None = parent # should be "None" or "a Constraint id"
         self.last_predicate = last_predicate # should be "None" or "a Predicate"
-        self.children = [] # a list of "Constraint id"s
-        self.height = height # for debugging purposes
-        self.processed = False # for debugging purposes
-        self.id = len(self.global_constraints)
+        self.children: list[int] = [] # a list of "Constraint id"s
+        self.height: int = height # for debugging purposes
+        self.processed: bool = False # for debugging purposes
+        self.id: int = len(self.global_constraints)
         self.global_constraints.append(self)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Self):
         """Two Constraints are equal iff they have the same chain of predicates"""
         return isinstance(other, self.__class__) and \
             self.parent == other.parent and \
@@ -28,7 +31,7 @@ class Constraint:
         self.children.append(c.id)
         return c
 
-    def find_child(self, predicate):
+    def find_child(self, predicate) -> Self:
         return next((self.global_constraints[c] for c in self.children if self.global_constraints[c].last_predicate == predicate), None)
 
     def get_all_asserts(self):

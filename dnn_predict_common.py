@@ -3,6 +3,8 @@ from dnnct.myDNN import NNModel
 import numpy as np
 import itertools
 
+from libct.position import register_layer_number_mapping, to_Keras_layer_number
+
 
 
 myModel = None
@@ -14,11 +16,25 @@ def init_model(model_path):
 
 	# 1: is because 1st dim of input shape of Keras model is batch size (None)
 	myModel.input_shape = model.input_shape[1:]
-	for layer in layers:
-		myModel.addLayer(layer)
+	myLayerCount = 0
+	for i, layer in enumerate(layers):
+		numberOfMyLayers = myModel.addLayer(layer)
+		# maintain the mapping of layers between Keras model and my model
+		for j in range(numberOfMyLayers):
+			register_layer_number_mapping(i, myLayerCount)
+			myLayerCount += 1
+	model.summary()
+	print('Number of layers in my model:', len(myModel.layers))
+	print('Number of layers in original Keras model:', len(layers))
+	print('Correspondence between layers in Keras model and my model:')
+	for myLayerNumber in range(myLayerCount):
+		print('My: ', myLayerNumber, 'Keras: ', to_Keras_layer_number(myLayerNumber))
+	for myLayer in myModel.layers:
+		print(type(myLayer))	
 
 
 def predict(**data):
+	# cast the flattened input dict 'data' back to the original shape and save to X
 	input_shape = myModel.input_shape
 
 	iter_args = (range(dim) for dim in input_shape)
@@ -31,7 +47,8 @@ def predict(**data):
 			X[i[0]][i[1]][i[2]] = data[f"{data_name_prefix}{i[0]}_{i[1]}_{i[2]}"]
 		elif len(i) == 4:
 			X[i[0]][i[1]][i[2]][i[3]] = data[f"{data_name_prefix}{i[0]}_{i[1]}_{i[2]}_{i[3]}"]
-
+	# calculate the output of the model
+	
 	out_val = myModel.forward(X)
  
 	# 用一顆神經元做二分類

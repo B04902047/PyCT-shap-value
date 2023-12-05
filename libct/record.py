@@ -1,8 +1,11 @@
+from __future__ import annotations
 import time
 import numpy as np
 import cv2
 import os
 import json
+
+from typing import Tuple, Callable
 
 class ConcolicTestRecorder:
     def __init__(self, save_dir, input_name):
@@ -30,12 +33,12 @@ class ConcolicTestRecorder:
         
         # meta
         self.input_name = input_name
-        self.input_shape = None
+        self.input_shape: Tuple[int, ...] | None = None
         self.original_label = None 
         self.attack_label = None
-        self.adversarial_input = None
-        self.is_finish = False # finish all iteration or generate an adversarial input
-        self.is_timeout = False
+        self.adversarial_input: np.ndarray | None = None
+        self.is_finish: bool = False # finish all iteration or generate an adversarial input
+        self.is_timeout: bool = False
         self.solve_all_ctr = False # solve all constraints
 
         # calculation
@@ -115,8 +118,8 @@ class ConcolicTestRecorder:
         self.solve_constraint_wall_time.append(0)
         self.solve_constraint_cpu_time.append(0)
 
-    def find_adversarial_input(self, input_dict, attack_label):
-        adv_input = np.zeros(self.input_shape).astype(np.float32)
+    def find_adversarial_input(self, input_dict: dict[str, float], attack_label):
+        adv_input: np.ndarray = np.zeros(self.input_shape).astype(np.float32)
 
         for k, v in input_dict.items():
             idx = k.split('_')[1:]

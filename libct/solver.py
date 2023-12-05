@@ -1,5 +1,6 @@
 import logging, os, re, subprocess, sys, time
 from libct.concolic import Concolic
+from libct.constraint import Constraint
 from libct.predicate import Predicate
 from libct.utils import py2smt
 
@@ -53,7 +54,7 @@ class Solver:
             cls.cmd += ["--tlimit=" + str(1000 * timeout)]
 
     @classmethod
-    def find_model_from_constraint(cls, engine, constraint, ori_args):
+    def find_model_from_constraint(cls, engine, constraint: Constraint, ori_args):
         print("[DEBUG]Finding model ... ")
         formulas = Solver._build_formulas_from_constraint(engine, constraint, ori_args); log.smtlib2(f"Solving To: {constraint}")
         start = time.time()
@@ -166,7 +167,7 @@ class Solver:
         return model
 
     @staticmethod
-    def _build_formulas_from_constraint(engine, constraint, ori_args):
+    def _build_formulas_from_constraint(engine, constraint: Constraint, ori_args):
         # declare_vars = "\n".join(f"(declare-const {name} {_type})" 
         #                for (name, _type) in engine.var_to_types.items()) #if engine.concolic_dict.get(name, 1))
         #NOTE DNN

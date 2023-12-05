@@ -4,12 +4,12 @@ from multiprocessing import Process
 model_name = "mnist_sep_act_m6_9628"
 # model_name = "mnist_sep_act_m6_9653_noise"
 
-NUM_PROCESS = 25
+NUM_PROCESS = 1
 TIMEOUT = 1800
 
 if __name__ == "__main__":
-    from utils.pyct_attack_exp import run_multi_attack_subprocess_wall_timeout
-    from utils.pyct_attack_exp_research_question import (        
+    from utils_out.pyct_attack_exp import run_multi_attack_subprocess_wall_timeout
+    from utils_out.pyct_attack_exp_research_question import (        
         pyct_shap_1_4_8_16_32_only_first_forward,
         pyct_shap_1_4_8_16_32_48_64, pyct_random_1_4_8_16_32_48_64,
     )

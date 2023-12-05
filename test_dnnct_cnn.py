@@ -9,8 +9,8 @@ import run_dnnct
 parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 
 # positional arguments
-parser.add_argument("modpath", metavar="path.to.module", help="import path to the target module (file) relative to the project root\nEx1: ./a/b/c.py -> a.b.c\nEx2: ./def.py -> def")
-parser.add_argument("input", metavar="input_dict", help="dictionary of initial arguments to be passed into the target function\nPlease note that the double quotes enclosing the dictionary cannot be omitted!\nEx1: func(a=1,b=2) -> \"{'a':1,'b':2}\"\nEx2: func(a='',b='') -> \"{'a':'','b':''}\"\n\nIf a function parameter is not assigned in this dictionary, the program will first\ncheck if it has a type annotation. If it does, the program will use the corresponding\nconstructor as its default value. For example, int() returns 0 and str() returns an\nempty string. Otherwise the program continues to check if it provides a default value.\nIf it does, the default value will be used directly. Otherwise the program simply uses\nan empty string as its default value.")
+# parser.add_argument("modpath", metavar="path.to.module", help="import path to the target module (file) relative to the project root\nEx1: ./a/b/c.py -> a.b.c\nEx2: ./def.py -> def")
+# parser.add_argument("input", metavar="input_dict", help="dictionary of initial arguments to be passed into the target function\nPlease note that the double quotes enclosing the dictionary cannot be omitted!\nEx1: func(a=1,b=2) -> \"{'a':1,'b':2}\"\nEx2: func(a='',b='') -> \"{'a':'','b':''}\"\n\nIf a function parameter is not assigned in this dictionary, the program will first\ncheck if it has a type annotation. If it does, the program will use the corresponding\nconstructor as its default value. For example, int() returns 0 and str() returns an\nempty string. Otherwise the program continues to check if it provides a default value.\nIf it does, the default value will be used directly. Otherwise the program simply uses\nan empty string as its default value.")
 
 # optional arguments
 parser.add_argument("--dump_projstats", dest="dump_projstats", action='store_true', help="dump project statistics under the directory \"./project_statistics/{ProjectName}/{path.\nto.module}/{FUNC}/\"")
@@ -35,7 +35,7 @@ parser.add_argument("-n", "--is_normalized", dest='norm', help="If normalize inp
 # parser.add_argument("--solver", dest='solver', help="solver type [default = cvc4]\nWe currently only support CVC4.", default="cvc4")
 
 # Parse arguments
-# args = parser.parse_args()
+args = parser.parse_args()
 
 
 ##########################################
@@ -43,7 +43,7 @@ parser.add_argument("-n", "--is_normalized", dest='norm', help="If normalize inp
 model_name = "mnist_sep_act_m6_9628"
 
 if __name__ == "__main__":
-    from utils.dataset import MnistDataset
+    from utils_out.dataset import MnistDataset
     
     mnist_dataset = MnistDataset()
 
@@ -172,7 +172,7 @@ if __name__ == "__main__":
     
     def test_queue_result_limit_many_pixels():
         idx = 6
-        in_dict, con_dict = mnist_dataset.get_mnist_test_data(idx=idx)
+        in_dict, con_dict, input_for_shap, background_dataset_for_shap = mnist_dataset.get_mnist_test_data(idx=idx)
 
         # if no change limit can be attacked in 1 iteration
         # if set change limit to 100 cannot be attacked in 1 iteration
@@ -193,7 +193,7 @@ if __name__ == "__main__":
         
         use_stack = False
         result = run_dnnct.run(
-            model_name, in_dict, con_dict,
+            model_name, input_for_shap, background_dataset_for_shap, in_dict, con_dict,
             save_exp=save_exp, norm=True, solve_order_stack=use_stack,
             max_iter=0, total_timeout=1800, single_timeout=1800, timeout=1800,
             limit_change_range=110,
@@ -208,8 +208,10 @@ if __name__ == "__main__":
     
     def test_queue_only_first_forward():
         idx = 6
-        in_dict, con_dict = mnist_dataset.get_mnist_test_data(idx=idx)
-
+        in_dict, con_dict, input_for_shap, background_dataset_for_shap = mnist_dataset.get_mnist_test_data(idx=idx)
+        #in_dict=mnist第6張圖片
+        #con_dict=mnist第6張圖片的concolic_dict(預設全為0)
+        
         # if no change limit can be attacked in 1 iteration
         # if set change limit to 100 cannot be attacked in 1 iteration
         # if set change limit to 110 can be attacked in 1 iteration
@@ -229,7 +231,7 @@ if __name__ == "__main__":
         
         use_stack = False
         result = run_dnnct.run(
-            model_name, in_dict, con_dict,
+            model_name, input_for_shap, background_dataset_for_shap, in_dict, con_dict, 
             save_exp=save_exp, norm=True, solve_order_stack=use_stack,
             max_iter=0, total_timeout=1800, single_timeout=1800, timeout=1800,
             only_first_forward=True            
@@ -239,6 +241,7 @@ if __name__ == "__main__":
         recorder = result[1]
     
     test_queue_only_first_forward()
+    #test_queue_result_limit_many_pixels()
     
     
     # print("\nTotal iterations:", result[0])
